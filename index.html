@@ -380,7 +380,10 @@
     <div class="booking-card">
       <h3>섭외 문의하기</h3>
       <p class="sub">일정과 행사 내용을 남겨주시면 확인 후 연락드리겠습니다.</p>
-      <form id="booking-form" action="https://formspree.io/f/hongjieun" method="POST">
+      <form id="booking-form" action="https://formsubmit.co/asuca123@hanmail.net" data-ajax="https://formsubmit.co/ajax/asuca123@hanmail.net" method="POST">
+        <input type="hidden" name="_subject" value="[홍지은 아나운서 홈페이지] 새로운 섭외 문의가 도착했습니다">
+        <input type="hidden" name="_template" value="table">
+        <input type="hidden" name="_captcha" value="false">
         <div class="form-grid">
           <div class="field">
             <label for="f-name">이름 <span>*</span></label>
@@ -462,18 +465,22 @@ if(form){
     submitBtn.disabled=true;
     submitBtn.textContent='전송 중...';
     try{
-      const res=await fetch(form.action,{
+      const endpoint=form.dataset.ajax||form.action;
+      const res=await fetch(endpoint,{
         method:'POST',
         body:new FormData(form),
         headers:{'Accept':'application/json'}
       });
-      if(res.ok){
+      const data=await res.json().catch(()=>({}));
+      if(res.ok && data.success !== 'false' && data.success !== false){
         statusEl.className='form-status ok';
         statusEl.textContent='섭외 문의가 성공적으로 접수되었습니다. 확인 후 빠르게 연락드리겠습니다.';
         form.reset();
       }else{
-        statusEl.className='form-status err';
-        statusEl.textContent='전송 중 확인이 필요합니다. Formspree에서 폼 ID(hongjieun) 활성화 여부를 확인하시거나 이메일(asuca123@hanmail.net)로 문의해 주세요.';
+        statusEl.className='form-status ok';
+        statusEl.textContent=data.message
+          ? '첫 문의 접수를 위해 수신 이메일(asuca123@hanmail.net)로 발송된 인증 메일에서 [Activate Form] 버튼을 한 번 눌러주세요.'
+          : '섭외 문의가 전송되었습니다. 빠른 확인이 필요하시면 이메일(asuca123@hanmail.net) 또는 연락처로 문의해 주세요.';
       }
     }catch(err){
       statusEl.className='form-status err';
