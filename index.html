@@ -380,10 +380,7 @@
     <div class="booking-card">
       <h3>섭외 문의하기</h3>
       <p class="sub">일정과 행사 내용을 남겨주시면 확인 후 연락드리겠습니다.</p>
-      <form id="booking-form" action="https://formsubmit.co/asuca123@hanmail.net" data-ajax="https://formsubmit.co/ajax/asuca123@hanmail.net" method="POST">
-        <input type="hidden" name="_subject" value="[홍지은 아나운서 홈페이지] 새로운 섭외 문의가 도착했습니다">
-        <input type="hidden" name="_template" value="table">
-        <input type="hidden" name="_captcha" value="false">
+      <form id="booking-form" action="https://formspree.io/f/hongjieun" method="POST">
         <div class="form-grid">
           <div class="field">
             <label for="f-name">이름 <span>*</span></label>
@@ -464,27 +461,38 @@ if(form){
     statusEl.textContent='';
     submitBtn.disabled=true;
     submitBtn.textContent='전송 중...';
+
+    const fd=new FormData(form);
+    const name=fd.get('이름')||'';
+    const contact=fd.get('연락처')||'';
+    const date=fd.get('행사날짜')||'';
+    const type=fd.get('행사종류')||'';
+    const msg=fd.get('문의내용')||'';
+
+    const openMailFallback=()=>{
+      const subject=`[섭외 문의] ${type} - ${name} (${date})`;
+      const body=`안녕하세요, 홍지은 아나운서 섭외 문의드립니다.\n\n• 이름/소속: ${name}\n• 연락처: ${contact}\n• 행사 날짜: ${date}\n• 행사 종류: ${type}\n\n[문의 내용]\n${msg}`;
+      try{navigator.clipboard.writeText(body)}catch(err){}
+      window.location.href=`mailto:asuca123@hanmail.net?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+      statusEl.className='form-status ok';
+      statusEl.textContent='작성하신 문의 내용으로 메일 발송 창을 열었습니다(클립보드에도 복사됨). 메일 창에서 보내기를 눌러주시면 접수됩니다.';
+    };
+
     try{
-      const endpoint=form.dataset.ajax||form.action;
-      const res=await fetch(endpoint,{
+      const res=await fetch(form.action,{
         method:'POST',
-        body:new FormData(form),
+        body:fd,
         headers:{'Accept':'application/json'}
       });
-      const data=await res.json().catch(()=>({}));
-      if(res.ok && data.success !== 'false' && data.success !== false){
+      if(res.ok){
         statusEl.className='form-status ok';
         statusEl.textContent='섭외 문의가 성공적으로 접수되었습니다. 확인 후 빠르게 연락드리겠습니다.';
         form.reset();
       }else{
-        statusEl.className='form-status ok';
-        statusEl.textContent=data.message
-          ? '첫 문의 접수를 위해 수신 이메일(asuca123@hanmail.net)로 발송된 인증 메일에서 [Activate Form] 버튼을 한 번 눌러주세요.'
-          : '섭외 문의가 전송되었습니다. 빠른 확인이 필요하시면 이메일(asuca123@hanmail.net) 또는 연락처로 문의해 주세요.';
+        openMailFallback();
       }
     }catch(err){
-      statusEl.className='form-status err';
-      statusEl.textContent='네트워크 오류가 발생했습니다. 잠시 후 다시 시도하시거나 이메일(asuca123@hanmail.net)로 직접 연락 부탁드립니다.';
+      openMailFallback();
     }finally{
       submitBtn.disabled=false;
       submitBtn.textContent='문의 보내기';
